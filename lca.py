@@ -1,43 +1,94 @@
-class Node:
-	# Constructor to create a new binary node
-	def __init__(self, key):
-		self.key = key
-		self.left = None
-		self.right = None
+import sys
+class DAG:
 
-# Finds the path from root node to given root of the tree.
-# Stores the path in a list path[], returns true if path
-# exists otherwise false
-def findPath( root, path, k):
+    def __init__(self):
+        self.create_graph()
 
-	if root is None:
-		return False
+    def create_graph(self):
+        self.graph = {}
 
-	path.append(root.key)
+    def add_node(self, node, graph=None):
+        if not graph:
+            graph = self.graph
 
-	if root.key == k :
-		return True
+        if node in graph:
+            return False
 
-	if ((root.left != None and findPath(root.left, path, k)) or
-			(root.right!= None and findPath(root.right, path, k))):
-		return True
+        graph[node] = []
 
-	path.pop()
-	return False
+    def add_edge(self, initial_node, terminal_node, graph=None):
+        if not graph:
+            graph = self.graph
 
-# Returns LCA if node n1 , n2 are present in the given
-# binary tre otherwise return -1
-def findLCA(root, n1, n2):
+        if initial_node in graph and terminal_node in graph:
+            graph[initial_node].append(terminal_node)
+            return True
+        else:
+            raise KeyError("Invalid nodes")
 
-	path1 = []
-	path2 = []
+def isAcyclic_wrapper(graph):
+    result = True
+    for node in graph:
+        if not isAcyclic([node], graph, node):
+            result = False
+            break
+    return result
 
-	if (not findPath(root, path1, n1) or not findPath(root, path2, n2)):
-		return -1
+def isAcyclic(node_list, graph, node):
+    if not graph[node]:
+        return True
+    else:
+        for child in graph[node]:
+            if child not in node_list:
+                node_list.append(child)
+                if not isAcyclic(node_list, graph, child):
+                    return False
+                node_list.remove(child)
+            else:
+                return False
+        return True
 
-	i = 0
-	while(i < len(path1) and i < len(path2)):
-		if path1[i] != path2[i]:
-			break
-		i += 1
-	return path1[i-1]
+def findLCA(graph, nodeA, nodeB):
+    if not isAcyclic_wrapper(graph):
+        return -1
+    global node_A_list
+    node_A_list = []
+    global node_B_list
+    node_B_list = []
+
+    for node in graph:
+        LCA_DFS([node], graph, node, 1, nodeA)
+        LCA_DFS([node], graph, node, 2, nodeB)
+
+    lowest_count = sys.maxsize
+    for itemA in node_A_list:
+        for itemB in node_B_list:
+            count = 0
+            for index, node1 in enumerate(reversed(itemA)):
+                count = index
+                for node2 in reversed(itemB):
+                    if node1 == node2 and count < lowest_count:
+                        LCANode = node2
+                        lowest_count = count
+                        return LCANode
+                    count += 1
+    return -1
+
+def LCA_DFS(node_list, graph, node, index, end_node):
+    if node == end_node:
+
+        if index == 1:
+            node_A_list.append(node_list[:])
+        elif index == 2:
+            node_B_list.append(node_list[:])
+        return True
+
+    if not graph[node]:
+        return True
+
+    else:
+        for child in graph[node]:
+            node_list.append(child)
+            LCA_DFS(node_list, graph, child, index, end_node)
+            node_list.remove(child)
+        return True
